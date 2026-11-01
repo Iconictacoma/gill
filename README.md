@@ -1,5 +1,7 @@
-# gill
-Gill programming language (remake)
+<div>
+    <img src="GILLlogo.png">
+</div>
+# ...the solution to C
 
 Gill is a general-purpose, imperative, functional systems programming language that emphasizes memory safety, inspired by C3, Rust, and D.
 ```rust
