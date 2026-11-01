@@ -1,0 +1,7 @@
+import stdlib;
+
+fn main() nil {
+    i32 number = 10;
+    printn("Hello");
+    printn(number);
+}
