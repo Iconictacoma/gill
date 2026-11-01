@@ -1,6 +1,7 @@
-<div>
-    <img src="GILLlogo.png">
+<div align=center>
+    <img src="GILLlogo.png" height=200>
 </div>
+
 # ...the solution to C
 
 Gill is a general-purpose, imperative, functional systems programming language that emphasizes memory safety, inspired by C3, Rust, and D.
