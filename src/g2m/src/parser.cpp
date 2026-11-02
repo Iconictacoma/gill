@@ -1,106 +1,28 @@
 #include "parser.hpp"
-#include <sstream>
-
+#include <unordered_map>
+#include <unordered_set>
 namespace g2m {
-Parser::Parser(const std::vector<Token>& tokens) : tokens_(tokens) {}
-const Token& Parser::peek() const { return tokens_[current_]; }
-const Token& Parser::previous() const { return tokens_[current_ - 1]; }
-bool Parser::check(TokenKind k) const { return peek().kind == k; }
-bool Parser::match(TokenKind k) {
-    if (!check(k)) return false;
-    ++current_; return true;
+Parser::Parser(const std::vector<Token>& t):tokens_(t){}
+const Token& Parser::peek()const{return tokens_[current_];}const Token& Parser::previous()const{return tokens_[current_-1];}
+bool Parser::check(TokenKind k)const{return peek().kind==k;}bool Parser::match(TokenKind k){if(!check(k))return false;++current_;return true;}
+const Token& Parser::consume(TokenKind k,const std::string& m){if(check(k))return tokens_[current_++];error(peek(),m);return peek();}
+void Parser::error(const Token&t,const std::string&m){errors_.push_back("line "+std::to_string(t.line)+":"+std::to_string(t.column)+": "+m);}
+void Parser::synchronize(){while(!check(TokenKind::EndOfFile)){if(previous().kind==TokenKind::Semicolon)return;if(check(TokenKind::KwFn)||check(TokenKind::KwImport)||check(TokenKind::KwModule)||check(TokenKind::KwPub))return;++current_;}}
+std::string Parser::parseModulePath(){const Token& first=consume(TokenKind::Identifier,"expected module name");std::string p=first.lexeme;while(match(TokenKind::ColonColon)){const Token& part=consume(TokenKind::Identifier,"expected name after '::'");p+="::"+part.lexeme;}return p;}
+std::string Parser::parseType(){if(match(TokenKind::KwI32)||match(TokenKind::KwI64)||match(TokenKind::KwU32)||match(TokenKind::KwU64)||match(TokenKind::KwF32)||match(TokenKind::KwF64)||match(TokenKind::KwBool)||match(TokenKind::KwChar)||match(TokenKind::KwString)||match(TokenKind::KwNil))return previous().lexeme;if(match(TokenKind::Identifier))return previous().lexeme;error(peek(),"expected type name");return "<error>";}
+Function Parser::parseFunction(){consume(TokenKind::KwFn,"expected 'fn'");const auto& n=consume(TokenKind::Identifier,"expected function name");Function f;f.name=n.lexeme;consume(TokenKind::LeftParen,"expected '(' after function name");
+ if(!check(TokenKind::RightParen)){do{Parameter p;p.type=parseType();p.variadic=match(TokenKind::Ellipsis);const auto& pn=consume(TokenKind::Identifier,"expected parameter name");p.name=pn.lexeme;if(p.variadic&&!check(TokenKind::RightParen)){error(peek(),"variadic parameter must be the final parameter");}f.parameters.push_back(p);if(p.variadic&&match(TokenKind::Comma)){error(previous(),"variadic parameter must be the final parameter");while(!check(TokenKind::RightParen)&&!check(TokenKind::EndOfFile))++current_;break;}}while(match(TokenKind::Comma)&&!check(TokenKind::RightParen));}
+ consume(TokenKind::RightParen,"expected ')' after parameters");f.returnType=parseType();if(match(TokenKind::Semicolon)){f.declarationOnly=true;return f;}consume(TokenKind::LeftBrace,"expected '{' or ';' after function signature");while(!check(TokenKind::RightBrace)&&!check(TokenKind::EndOfFile)){auto before=current_;f.body.push_back(parseStatement());if(current_==before)++current_;}consume(TokenKind::RightBrace,"expected '}' after function body");return f;}
+Argument Parser::parseArgument(){Argument a;if(match(TokenKind::String)){a.type="string";a.value=previous().lexeme;a.stringLiteral=true;}else if(match(TokenKind::Number)){a.value=previous().lexeme;a.type=a.value.find('.')==std::string::npos?"i32":"f64";}else if(match(TokenKind::KwTrue)||match(TokenKind::KwFalse)){a.type="bool";a.value=previous().lexeme;}else if(match(TokenKind::Identifier)){a.value=previous().lexeme;a.type="<identifier>";}else{error(peek(),"expected argument expression");a.type="<error>";}return a;}
+Statement Parser::parseStatement(){
+ if(match(TokenKind::KwI32)){const auto& name=consume(TokenKind::Identifier,"expected variable name");consume(TokenKind::Equal,"expected '=' in variable declaration");const auto& value=consume(TokenKind::Number,"expected integer literal");consume(TokenKind::Semicolon,"expected ';' after declaration");Statement s;s.kind=Statement::Kind::VariableI32;s.name=name.lexeme;s.value=value.lexeme;return s;}
+ const auto& callee=consume(TokenKind::Identifier,"expected statement");consume(TokenKind::LeftParen,"expected '(' after function name");Statement s;s.name=callee.lexeme;
+ if(!check(TokenKind::RightParen)){do{s.arguments.push_back(parseArgument());}while(match(TokenKind::Comma));}consume(TokenKind::RightParen,"expected ')' after arguments");consume(TokenKind::Semicolon,"expected ';' after function call");
+ if(s.name=="printfn"){s.kind=Statement::Kind::Printf;for(const auto&a:s.arguments)if(a.type=="<error>"){}else if(a.type=="<identifier>"){}else if(a.type!="string"&&a.type!="i32"&&a.type!="f64"&&a.type!="bool")error(callee,"printfn does not support argument type '"+a.type+"'");}
+ else if(s.name=="printn"){s.kind=Statement::Kind::PrintString;if(s.arguments.size()!=1)error(callee,"printn expects exactly one string argument");else if(s.arguments[0].type!="string"&&s.arguments[0].type!="<identifier>")error(callee,"printn expects a string argument");}
+ else{s.kind=Statement::Kind::Call;}
+ return s;
 }
-const Token& Parser::consume(TokenKind k, const std::string& message) {
-    if (check(k)) return tokens_[current_++];
-    error(peek(), message);
-    return peek();
-}
-void Parser::error(const Token& t, const std::string& message) {
-    errors_.push_back("line " + std::to_string(t.line) + ":" +
-        std::to_string(t.column) + ": " + message);
-}
-void Parser::synchronize() {
-    while (!check(TokenKind::EndOfFile)) {
-        if (previous().kind == TokenKind::Semicolon) return;
-        if (check(TokenKind::KwFn) || check(TokenKind::KwImport)) return;
-        ++current_;
-    }
-}
-
-std::string Parser::parseModulePath() {
-    std::string path;
-    const Token& first = consume(TokenKind::Identifier, "expected module name");
-    path = first.lexeme;
-    while (match(TokenKind::ColonColon)) {
-        const Token& part = consume(TokenKind::Identifier,
-                                    "expected module name after '::'");
-        path += "::" + part.lexeme;
-    }
-    return path;
-}
-
-Function Parser::parseFunction() {
-    consume(TokenKind::KwFn, "expected 'fn'");
-    const Token& name = consume(TokenKind::Identifier, "expected function name");
-    consume(TokenKind::LeftParen, "expected '(' after function name");
-    consume(TokenKind::RightParen, "this first compiler version supports no parameters");
-    std::string returnType;
-    if (match(TokenKind::KwNil)) returnType = "nil";
-    else {
-        error(peek(), "expected return type 'nil' in this compiler milestone");
-        returnType = "nil";
-    }
-    consume(TokenKind::LeftBrace, "expected '{' before function body");
-    Function function{name.lexeme, returnType, {}};
-    while (!check(TokenKind::RightBrace) && !check(TokenKind::EndOfFile)) {
-        try { function.body.push_back(parseStatement()); }
-        catch (...) { synchronize(); }
-    }
-    consume(TokenKind::RightBrace, "expected '}' after function body");
-    return function;
-}
-
-Statement Parser::parseStatement() {
-    if (match(TokenKind::KwI32)) {
-        const Token& name = consume(TokenKind::Identifier, "expected variable name");
-        consume(TokenKind::Equal, "expected '=' in variable declaration");
-        const Token& value = consume(TokenKind::Number, "expected integer literal");
-        consume(TokenKind::Semicolon, "expected ';' after declaration");
-        return {Statement::Kind::VariableI32, name.lexeme, value.lexeme};
-    }
-    consume(TokenKind::Identifier, "expected statement");
-    const Token callee = previous();
-    if (callee.lexeme != "printn") error(callee, "only 'printn' calls are supported so far");
-    consume(TokenKind::LeftParen, "expected '(' after function name");
-    Statement result{};
-    if (match(TokenKind::String)) {
-        result = {Statement::Kind::PrintString, "", previous().lexeme};
-    } else if (match(TokenKind::Identifier)) {
-        result = {Statement::Kind::PrintIdentifier, previous().lexeme, ""};
-    } else {
-        error(peek(), "expected string literal or identifier in printn call");
-    }
-    consume(TokenKind::RightParen, "expected ')' after argument");
-    consume(TokenKind::Semicolon, "expected ';' after function call");
-    return result;
-}
-
-Program Parser::parse() {
-    Program program;
-    while (!check(TokenKind::EndOfFile)) {
-        if (match(TokenKind::KwImport)) {
-            std::string path;
-            if (check(TokenKind::Identifier)) path = parseModulePath();
-            else error(peek(), "expected module name after import");
-            consume(TokenKind::Semicolon, "expected ';' after import");
-            program.imports.push_back(path);
-        } else if (check(TokenKind::KwFn)) {
-            program.functions.push_back(parseFunction());
-        } else {
-            error(peek(), "expected import or function declaration");
-            ++current_;
-        }
-    }
-    return program;
-}
+Program Parser::parse(){Program p;if(match(TokenKind::KwPub)){consume(TokenKind::KwModule,"expected 'module' after 'pub'");p.modulePublic=true;p.moduleName=parseModulePath();consume(TokenKind::Semicolon,"expected ';' after module declaration");}else if(match(TokenKind::KwModule)){p.moduleName=parseModulePath();consume(TokenKind::Semicolon,"expected ';' after module declaration");}else error(peek(),"every module file must begin with 'module' or 'pub module'");
+ bool first=true;while(!check(TokenKind::EndOfFile)){if(match(TokenKind::KwImport)){if(first){}std::string path=parseModulePath();consume(TokenKind::Semicolon,"expected ';' after import");p.imports.push_back(path);}else if(check(TokenKind::KwFn)){p.functions.push_back(parseFunction());}else{error(peek(),"expected import or function declaration");++current_;}first=false;}return p;}
 }

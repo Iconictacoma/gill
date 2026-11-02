@@ -1,7 +1,10 @@
-import stdlib;
+pub module examples::hello;
+import stdlib::io;
+
+fn sum(i32... numbers) i32;
 
 fn main() nil {
     i32 number = 10;
-    printn("Hello");
-    printn(number);
+    printn("Hello, Gill!");
+    printfn("Number: ", number, ", active: ", true);
 }
