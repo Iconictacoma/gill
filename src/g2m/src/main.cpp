@@ -31,23 +31,26 @@ static bool emitCpp(const g2m::Program& p, const fs::path& path, std::string& wh
     for (const auto& f : p.functions) {
         if (f.declarationOnly) continue;
         if (f.name == "main") mainFn = &f;
-        if (f.name != "main" || f.returnType != "nil" || !f.parameters.empty()) {
-            why = "this build supports a zero-argument fn main() nil entry point; other function bodies are not yet emitted";
+        if (f.name != "main" || (f.returnType != "nil" && f.returnType != "i32" && f.returnType != "int") || !f.parameters.empty()) {
+            why = "main must be declared as fn main() nil, fn main() i32, or fn main() int, with no parameters";
             return false;
         }
     }
-    if (!mainFn) { why = "program must define fn main() nil"; return false; }
+    if (!mainFn) { why = "program must define fn main() nil, fn main() i32, or fn main() int"; return false; }
     out << "#include <cstdint>\n#include <iostream>\n#include <string>\n#include <cmath>\n\n";
     for (const auto& f : p.functions) {
         if (f.declarationOnly) continue;
         if (f.name != "main") {
-            why = "only main() is currently supported as a function definition";
+            why = "user-defined function bodies are not yet emitted in this build";
             return false;
         }
         out << "int main() {\n";
         for (const auto& s : f.body) {
             using K = g2m::Statement::Kind;
-            if (s.kind == K::VariableI32) {
+            if (s.kind == K::Return) {
+                if (mainFn->returnType == "nil") { if (!s.value.empty()) { why = "fn main() nil cannot return a value"; return false; } out << "  return 0;\n"; }
+                else { if (s.value.empty() || (s.declaredType != "i32" && s.declaredType != "<identifier>")) { why = "fn main() i32/int must return an integer expression"; return false; } out << "  return " << s.value << ";\n"; }
+            } else if (s.kind == K::VariableI32) {
                 static const std::unordered_map<std::string,std::string> types = {
                     {"i8","std::int8_t"},{"i16","std::int16_t"},{"i32","std::int32_t"},{"i64","std::int64_t"},{"i128","__int128"},
                     {"u8","std::uint8_t"},{"u16","std::uint16_t"},{"u32","std::uint32_t"},{"u64","std::uint64_t"},{"u128","unsigned __int128"},
@@ -68,7 +71,8 @@ static bool emitCpp(const g2m::Program& p, const fs::path& path, std::string& wh
                 return false;
             }
         }
-        out << "  return 0;\n}\n";
+        if (mainFn->returnType == "nil") out << "  return 0;\n";
+        out << "}\n";
     }
     return true;
 }

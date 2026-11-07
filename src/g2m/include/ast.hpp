@@ -14,7 +14,7 @@ struct Argument {
     bool stringLiteral = false;
 };
 struct Statement {
-    enum class Kind { PrintString, PrintIdentifier, Printf, VariableI32, Call };
+    enum class Kind { PrintString, PrintIdentifier, Printf, VariableI32, Call, Return };
     Kind kind = Kind::Call;
     std::string name;
     std::string value;

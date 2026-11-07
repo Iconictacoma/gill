@@ -1,1 +1,1 @@
-**NOTICE**: The standard library is not yet implemented.
+# The standard library is not yet implemented as a complete set of Gill modules. In this snapshot, `stdlib` and `stdlib::io` are recognized by g2m to enable the built-in `printn` and `printfn` output operations. The planned modules (`io`, `io::files`, `files`, `str`, `math`, `mem`, `thread`, `sync`, and `channel`) remain future work. This file records the boundary so the compiler does not present placeholders as working library functionality.
