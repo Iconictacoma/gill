@@ -1,0 +1,6 @@
+import stdlib::io;
+fn main() nil {
+    mut i32 counter = 3;
+    const f64 scale = 2.5;
+    printfn("counter=", counter, ", scale=", scale);
+}

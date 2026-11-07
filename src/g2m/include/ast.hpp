@@ -18,6 +18,9 @@ struct Statement {
     Kind kind = Kind::Call;
     std::string name;
     std::string value;
+    std::string declaredType;
+    bool mutableValue = false;
+    bool constant = false;
     std::vector<Argument> arguments;
 };
 struct Function {

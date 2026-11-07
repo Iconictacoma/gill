@@ -1,0 +1,15 @@
+import stdlib::io;
+fn main() nil {
+    i8 small = 7;
+    i16 medium = 120;
+    i32 count = 42;
+    i64 large = 9000;
+    u32 positive = 5;
+    f32 ratio = 1.5;
+    f64 precise = 2.75;
+    bool ready = true;
+    string greeting = "Gill";
+    mut i32 changed = 9;
+    const f64 pi = 3.14159;
+    printfn(greeting, " ", small, " ", medium, " ", count, " ", large, " ", positive, " ", ratio, " ", precise, " ", ready, " ", changed, " ", pi);
+}

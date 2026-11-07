@@ -8,6 +8,7 @@
 #include <iterator>
 #include <string>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace fs = std::filesystem;
 
@@ -30,13 +31,13 @@ static bool emitCpp(const g2m::Program& p, const fs::path& path, std::string& wh
     for (const auto& f : p.functions) {
         if (f.declarationOnly) continue;
         if (f.name == "main") mainFn = &f;
-        if (f.returnType != "nil" || !f.parameters.empty()) {
-            why = "native executable prototype currently supports only zero-argument nil function definitions";
+        if (f.name != "main" || f.returnType != "nil" || !f.parameters.empty()) {
+            why = "this build supports a zero-argument fn main() nil entry point; other function bodies are not yet emitted";
             return false;
         }
     }
     if (!mainFn) { why = "program must define fn main() nil"; return false; }
-    out << "#include <cstdint>\n#include <iostream>\n#include <string>\n\n";
+    out << "#include <cstdint>\n#include <iostream>\n#include <string>\n#include <cmath>\n\n";
     for (const auto& f : p.functions) {
         if (f.declarationOnly) continue;
         if (f.name != "main") {
@@ -47,15 +48,21 @@ static bool emitCpp(const g2m::Program& p, const fs::path& path, std::string& wh
         for (const auto& s : f.body) {
             using K = g2m::Statement::Kind;
             if (s.kind == K::VariableI32) {
-                out << "  std::int32_t " << s.name << " = " << s.value << ";\n";
+                static const std::unordered_map<std::string,std::string> types = {
+                    {"i8","std::int8_t"},{"i16","std::int16_t"},{"i32","std::int32_t"},{"i64","std::int64_t"},{"i128","__int128"},
+                    {"u8","std::uint8_t"},{"u16","std::uint16_t"},{"u32","std::uint32_t"},{"u64","std::uint64_t"},{"u128","unsigned __int128"},
+                    {"isize","std::intptr_t"},{"usize","std::uintptr_t"},{"int","std::int32_t"},{"f32","float"},{"f64","double"},
+                    {"bool","bool"},{"char","char"},{"string","std::string"}};
+                auto it=types.find(s.declaredType); if(it==types.end()){why="unsupported variable type '"+s.declaredType+"'";return false;}
+                out << "  " << (s.constant ? "const " : "") << it->second << " " << s.name << " = " << s.value << ";\n";
             } else if (s.kind == K::PrintString) {
                 if (s.arguments.size() != 1) { why = "invalid printn call"; return false; }
-                const auto& a = s.arguments[0];
-                out << "  std::cout << " << (a.stringLiteral ? a.value : a.value) << " << '\\n';\n";
+                out << "  std::cout << " << s.arguments[0].value << " << '\\n';\n";
             } else if (s.kind == K::Printf) {
                 out << "  ";
                 for (const auto& a : s.arguments) out << "std::cout << " << a.value << "; ";
-                out << "std::cout << '\\n';\n";
+                if(s.name=="printfn") out << "std::cout << '\\n';";
+                out << "\n";
             } else {
                 why = "function calls other than printn/printfn are not yet supported by the native backend";
                 return false;

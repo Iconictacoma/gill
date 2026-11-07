@@ -1,0 +1,13 @@
+import stdlib::io;
+fn main() nil {
+    i8 tiny = 7;
+    i16 small = 120;
+    i32 count = 42;
+    i64 large = 9000;
+    u32 positive = 5;
+    f32 ratio = 1.5;
+    f64 precise = 2.75;
+    bool ready = true;
+    string greeting = "Gill";
+    printfn(greeting, " ", tiny, " ", small, " ", count, " ", large, " ", positive, " ", ratio, " ", precise, " ", ready);
+}
