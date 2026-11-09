@@ -17,3 +17,5 @@ add_test(NAME g2m_primitive_types COMMAND g2m ${CMAKE_CURRENT_SOURCE_DIR}/exampl
 
 add_test(NAME g2m_main_i32 COMMAND g2m ${CMAKE_CURRENT_SOURCE_DIR}/examples/main_i32.gill -c ${CMAKE_CURRENT_BINARY_DIR}/main_i32_test)
 add_test(NAME g2m_main_int COMMAND g2m ${CMAKE_CURRENT_SOURCE_DIR}/examples/main_int.gill -c ${CMAKE_CURRENT_BINARY_DIR}/main_int_test)
+
+add_test(NAME g2m_functions_control COMMAND g2m ${CMAKE_CURRENT_SOURCE_DIR}/examples/functions_control.gill -c ${CMAKE_CURRENT_BINARY_DIR}/functions_control_test)

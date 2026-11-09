@@ -1,1 +1,6 @@
-# The standard library is not yet implemented as a complete set of Gill modules. In this snapshot, `stdlib` and `stdlib::io` are recognized by g2m to enable the built-in `printn` and `printfn` output operations. The planned modules (`io`, `io::files`, `files`, `str`, `math`, `mem`, `thread`, `sync`, and `channel`) remain future work. This file records the boundary so the compiler does not present placeholders as working library functionality.
+This compiler snapshot provides a small native runtime surface in generated C++:
+- `stdlib::io`: `printn(value)` and `printfn(values...)` output helpers.
+- `stdlib::math`: `sqrt(value)`, `pow(base, exponent)`, `absolute(value)`.
+- `stdlib::str`: `length(value)`, `parse_i32(string)`, `parse_f64(string)`.
+
+These helpers are currently compiler-runtime built-ins rather than independently compiled `.gill` modules.

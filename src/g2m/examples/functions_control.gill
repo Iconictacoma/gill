@@ -1,0 +1,33 @@
+import stdlib::io;
+
+fn add(i32 left, i32 right) i32 {
+    return left + right;
+}
+
+fn square(i32 value) i32 {
+    return value * value;
+}
+
+fn main() i32 {
+    mut i32 total = add(2, 3);
+    printfn("square: ", square(total));
+
+    if (total == 5) {
+        printfn("if branch");
+    } else {
+        printfn("else branch");
+    }
+
+    mut i32 i = 0;
+    while (i < 3) {
+        total = total + i;
+        i++;
+    }
+
+    for (i32 j = 0; j < 2; j++) {
+        total += j;
+    }
+
+    printfn("total: ", total);
+    return total;
+}
