@@ -19,3 +19,6 @@ add_test(NAME g2m_main_i32 COMMAND g2m ${CMAKE_CURRENT_SOURCE_DIR}/examples/main
 add_test(NAME g2m_main_int COMMAND g2m ${CMAKE_CURRENT_SOURCE_DIR}/examples/main_int.gill -c ${CMAKE_CURRENT_BINARY_DIR}/main_int_test)
 
 add_test(NAME g2m_functions_control COMMAND g2m ${CMAKE_CURRENT_SOURCE_DIR}/examples/functions_control.gill -c ${CMAKE_CURRENT_BINARY_DIR}/functions_control_test)
+
+add_test(NAME g2m_format_argv COMMAND g2m ${CMAKE_CURRENT_SOURCE_DIR}/examples/format_argv.gill -c ${CMAKE_CURRENT_BINARY_DIR}/format_argv_test)
+add_test(NAME g2m_main_zstring COMMAND g2m ${CMAKE_CURRENT_SOURCE_DIR}/examples/main_zstring.gill -c ${CMAKE_CURRENT_BINARY_DIR}/main_zstring_test)

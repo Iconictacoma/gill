@@ -6,5 +6,5 @@ fn sum(i32... numbers) i32;
 fn main() nil {
     i32 number = 10;
     printn("Hello, Gill!");
-    printfn("Number: ", number, ", active: ", true);
+    printfn("Number: %d, active: %b", number, true);
 }

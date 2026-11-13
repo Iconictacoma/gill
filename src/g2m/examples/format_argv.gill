@@ -1,0 +1,6 @@
+import stdlib::io;
+
+fn main(i32 argc, string[] argv) i32 {
+    printf("argc=%d, name=%s, percent=%%, ratio=%.2f\n", argc, argv[0], 12.5);
+    return 0;
+}

@@ -1,0 +1,4 @@
+fn main(i32 argc, zString* argv) i32 {
+    printfn("argc=%d, executable=%s", argc, argv[0]);
+    return 0;
+}
