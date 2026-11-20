@@ -1,4 +1,4 @@
-<img width="400" height="540" alt="GILLlogo" src="GILLlogo.png" />
+<img alt="GILLlogo" src="GILLlogo.png" />
 
 People are **free** to contribute to the Gill project.
 
